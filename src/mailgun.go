@@ -23,3 +23,21 @@ func subscribe(ctx context.Context, email string) error {
 	_, err := client.Do(req)
 	return err
 }
+
+func send(ctx context.Context, subject string, message string) error {
+	client := urlfetch.Client(ctx)
+	endpoint := "https://api.mailgun.net/v3/" + domain + "/messages"
+
+	data := url.Values{
+		"from":    {"Outcrawl <news@outcrawl.com>"},
+		"to":      {mailingListAddress},
+		"subject": {subject},
+		"html":    {message},
+	}
+
+	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
+	req.SetBasicAuth("api", apiKey)
+
+	_, err := client.Do(req)
+	return err
+}

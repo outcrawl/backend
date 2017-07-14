@@ -25,6 +25,8 @@ func init() {
 	r.HandleFunc("/subscribe", subscribeHandler).
 		Methods("POST").
 		Queries("email", "{email}")
+	r.HandleFunc("/send", sendMailHandler).
+		Methods("POST")
 
 	http.Handle("/", r)
 }
