@@ -9,8 +9,8 @@ import (
 )
 
 type SendRequest struct {
-	subject string
-	message string
+	Subject string `json:"subject"`
+	Message string `json:"message"`
 }
 
 func subscribeHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,7 +21,7 @@ func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	if err := subscribe(ctx, email); err == nil {
 		responseJSON(w, "ok")
 	} else {
-		responseError(w, err.Error(), http.StatusInternalServerError)
+		responseError(w, err.Error(), http.StatusBadRequest)
 	}
 }
 
@@ -41,7 +41,7 @@ func sendMailHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ctx := appengine.NewContext(r)
-	if err := send(ctx, sr.subject, sr.message); err == nil {
+	if err := send(ctx, sr.Subject, sr.Message); err == nil {
 		responseJSON(w, "ok")
 	} else {
 		responseError(w, err.Error(), http.StatusInternalServerError)

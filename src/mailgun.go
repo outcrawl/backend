@@ -2,8 +2,11 @@ package newsletter
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/urlfetch"
@@ -11,22 +14,27 @@ import (
 
 func subscribe(ctx context.Context, email string) error {
 	client := urlfetch.Client(ctx)
-	endpoint := "https://api.mailgun.net/v3/lists/" + mailingListAddress + "/members"
+	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/lists/%s/members", mailingListAddress)
 	data := url.Values{
 		"subscribed": {"True"},
 		"address":    {email},
+		"vars":       {fmt.Sprintf(`{"subscribed_at": "%d"}`, time.Now().UnixNano())},
 	}
 
 	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
 	req.SetBasicAuth("api", apiKey)
 
-	_, err := client.Do(req)
-	return err
+	resp, err := client.Do(req)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	return errors.New("member not added")
 }
 
 func send(ctx context.Context, subject string, message string) error {
 	client := urlfetch.Client(ctx)
-	endpoint := "https://api.mailgun.net/v3/" + domain + "/messages"
+	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", domain)
 
 	data := url.Values{
 		"from":    {"Outcrawl <news@outcrawl.com>"},
@@ -38,6 +46,10 @@ func send(ctx context.Context, subject string, message string) error {
 	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
 	req.SetBasicAuth("api", apiKey)
 
-	_, err := client.Do(req)
-	return err
+	resp, err := client.Do(req)
+	if err == nil && resp.StatusCode == http.StatusOK {
+		return nil
+	}
+
+	return errors.New("mail not sent")
 }

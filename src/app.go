@@ -12,6 +12,9 @@ var (
 	publicAPIKey       string
 	domain             string
 	mailingListAddress string
+
+	publicToken  string
+	privateToken string
 )
 
 func init() {
@@ -20,13 +23,17 @@ func init() {
 	domain = os.Getenv("DOMAIN")
 	mailingListAddress = os.Getenv("MAILING_LIST_ADDRESS")
 
+	publicToken = os.Getenv("PUBLIC_TOKEN")
+	privateToken = os.Getenv("PRIVATE_TOKEN")
+
 	r := mux.NewRouter()
 
 	r.HandleFunc("/subscribe", subscribeHandler).
 		Methods("POST").
-		Queries("email", "{email}")
+		Queries("email", "{email}", "token", publicToken)
 	r.HandleFunc("/send", sendMailHandler).
-		Methods("POST")
+		Methods("POST").
+		Queries("token", privateToken)
 
 	http.Handle("/", r)
 }
