@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/rs/cors"
 )
 
 var (
@@ -35,5 +36,5 @@ func init() {
 		Methods("POST").
 		Queries("token", privateToken)
 
-	http.Handle("/", r)
+	http.Handle("/", cors.AllowAll().Handler(r))
 }

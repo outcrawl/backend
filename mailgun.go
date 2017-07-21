@@ -16,9 +16,8 @@ func subscribe(ctx context.Context, email string) error {
 	client := urlfetch.Client(ctx)
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/lists/%s/members", mailingListAddress)
 	data := url.Values{
-		"subscribed": {"True"},
-		"address":    {email},
-		"vars":       {fmt.Sprintf(`{"subscribed_at": "%d"}`, time.Now().UnixNano())},
+		"address": {email},
+		"vars":    {fmt.Sprintf(`{"subscribed_at": "%d"}`, time.Now().UnixNano())},
 	}
 
 	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
@@ -33,12 +32,16 @@ func subscribe(ctx context.Context, email string) error {
 }
 
 func send(ctx context.Context, subject string, message string) error {
+	return sendTo(ctx, subject, message, mailingListAddress)
+}
+
+func sendTo(ctx context.Context, subject string, message string, to string) error {
 	client := urlfetch.Client(ctx)
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", domain)
 
 	data := url.Values{
 		"from":    {"Outcrawl <news@outcrawl.com>"},
-		"to":      {mailingListAddress},
+		"to":      {to},
 		"subject": {subject},
 		"html":    {message},
 	}
