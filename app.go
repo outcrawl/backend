@@ -36,5 +36,8 @@ func init() {
 		Methods("POST").
 		Queries("token", privateToken)
 
-	http.Handle("/", cors.AllowAll().Handler(r))
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"https://outcrawl.com"},
+	})
+	http.Handle("/", c.Handler(r))
 }
