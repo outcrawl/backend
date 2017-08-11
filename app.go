@@ -1,4 +1,4 @@
-package newsletter
+package backend
 
 import (
 	"net/http"
@@ -9,35 +9,57 @@ import (
 )
 
 var (
-	apiKey             string
-	publicAPIKey       string
-	domain             string
-	mailingListAddress string
-
-	publicToken  string
-	privateToken string
+	adminUserID          string
+	adminToken           string
+	adminEmail           string
+	googleClientID       string
+	googleCertsURL       string
+	mgAPIKey             string
+	mgPublicAPIKey       string
+	mgDomain             string
+	mgMailingListAddress string
 )
 
 func init() {
-	apiKey = os.Getenv("API_KEY")
-	publicAPIKey = os.Getenv("PUBLIC_API_KEY")
-	domain = os.Getenv("DOMAIN")
-	mailingListAddress = os.Getenv("MAILING_LIST_ADDRESS")
-
-	publicToken = os.Getenv("PUBLIC_TOKEN")
-	privateToken = os.Getenv("PRIVATE_TOKEN")
+	adminUserID = os.Getenv("ADMIN_USER_ID")
+	adminToken = os.Getenv("ADMIN_TOKEN")
+	adminEmail = os.Getenv("ADMIN_EMAIL")
+	googleClientID = os.Getenv("GOOGLE_CLIENT_ID")
+	googleCertsURL = os.Getenv("GOOGLE_CERTS_URL")
+	mgAPIKey = os.Getenv("MG_API_KEY")
+	mgPublicAPIKey = os.Getenv("MG_PUBLIC_API_KEY")
+	mgDomain = os.Getenv("MG_DOMAIN")
+	mgMailingListAddress = os.Getenv("MG_MAILING_LIST_ADDRESS")
 
 	r := mux.NewRouter()
 
-	r.HandleFunc("/subscribe", subscribeHandler).
-		Methods("POST").
-		Queries("email", "{email}", "token", publicToken)
-	r.HandleFunc("/send", sendMailHandler).
-		Methods("POST").
-		Queries("token", privateToken)
+	// users
+	r.HandleFunc("/api/users/signin", Authenticate(signInHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/users/{id}/ban", Authenticate(banUserHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/users/{id}/unban", Authenticate(unbanUserHandler)).
+		Methods("POST")
 
-	c := cors.New(cors.Options{
-		AllowedOrigins: []string{"https://outcrawl.com"},
-	})
-	http.Handle("/", c.Handler(r))
+	// mail
+	r.HandleFunc("/api/mail/subscribe", Authenticate(subscribeHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/mail/send", Authenticate(sendMailHandler)).
+		Methods("POST")
+
+	// comments
+	r.HandleFunc("/api/threads/{id}", Authenticate(createThreadHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/threads/{id}", readThreadHandler).
+		Methods("GET")
+	r.HandleFunc("/api/threads/{id}", Authenticate(deleteThreadHandler)).
+		Methods("DELETE")
+	r.HandleFunc("/api/threads/{id}/close", Authenticate(closeThreadHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/threads/{id}/comments", Authenticate(createCommentHandler)).
+		Methods("POST")
+	r.HandleFunc("/api/threads/{threadId}/comments/{id}", Authenticate(deleteCommentHandler)).
+		Methods("DELETE")
+
+	http.Handle("/", cors.AllowAll().Handler(r))
 }

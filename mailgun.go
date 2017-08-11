@@ -1,4 +1,4 @@
-package newsletter
+package backend
 
 import (
 	"bytes"
@@ -14,30 +14,33 @@ import (
 
 func subscribe(ctx context.Context, email string) error {
 	client := urlfetch.Client(ctx)
-	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/lists/%s/members", mailingListAddress)
+	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/lists/%s/members", mgMailingListAddress)
 	data := url.Values{
 		"address": {email},
 		"vars":    {fmt.Sprintf(`{"subscribed_at": "%d"}`, time.Now().UnixNano())},
 	}
 
 	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
-	req.SetBasicAuth("api", apiKey)
+	req.SetBasicAuth("api", mgAPIKey)
 
 	resp, err := client.Do(req)
 	if err == nil && resp.StatusCode == http.StatusOK {
 		return nil
 	}
 
+	if err != nil {
+		return err
+	}
 	return errors.New("member not added")
 }
 
 func send(ctx context.Context, subject string, message string) error {
-	return sendTo(ctx, subject, message, mailingListAddress)
+	return sendTo(ctx, subject, message, mgMailingListAddress)
 }
 
 func sendTo(ctx context.Context, subject string, message string, to string) error {
 	client := urlfetch.Client(ctx)
-	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", domain)
+	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", mgDomain)
 
 	data := url.Values{
 		"from":    {"Outcrawl <news@outcrawl.com>"},
@@ -47,7 +50,7 @@ func sendTo(ctx context.Context, subject string, message string, to string) erro
 	}
 
 	req, _ := http.NewRequest("POST", endpoint, bytes.NewBufferString(data.Encode()))
-	req.SetBasicAuth("api", apiKey)
+	req.SetBasicAuth("api", mgAPIKey)
 
 	resp, err := client.Do(req)
 	if err == nil && resp.StatusCode == http.StatusOK {
