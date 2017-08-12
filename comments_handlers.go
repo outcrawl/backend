@@ -1,10 +1,11 @@
 package backend
 
 import (
-	"db"
 	"net/http"
 	"time"
-	"util"
+
+	"github.com/outcrawl/backend/db"
+	"github.com/outcrawl/backend/util"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"

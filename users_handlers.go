@@ -4,8 +4,8 @@ import (
 	"errors"
 	"net/http"
 
-	"db"
-	"util"
+	"github.com/outcrawl/backend/db"
+	"github.com/outcrawl/backend/util"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/net/context"

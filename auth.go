@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"db"
-	"util"
+	"github.com/outcrawl/backend/db"
+	"github.com/outcrawl/backend/util"
 
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"

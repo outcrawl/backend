@@ -2,18 +2,14 @@ package backend
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
-	"strconv"
-	"time"
 
-	"db"
-	"util"
+	"github.com/outcrawl/backend/db"
+	"github.com/outcrawl/backend/util"
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
-	"google.golang.org/appengine/memcache"
 )
 
 type sendRequest struct {
@@ -22,13 +18,7 @@ type sendRequest struct {
 }
 
 func subscribeHandler(ctx context.Context, user *db.User, w http.ResponseWriter, r *http.Request) {
-	if err := checkSubscribeLimit(ctx, r.RemoteAddr); err != nil {
-		util.ResponseError(w, err.Error(), http.StatusForbidden)
-		return
-	}
-
 	if err := subscribe(ctx, user.Email); err == nil {
-		updateSubscribeLimit(ctx, r.RemoteAddr)
 		util.ResponseJSON(w, user)
 	} else {
 		log.Infof(ctx, "%v", err)
@@ -61,26 +51,4 @@ func sendMailHandler(ctx context.Context, user *db.User, w http.ResponseWriter, 
 	} else {
 		util.ResponseError(w, err.Error(), http.StatusInternalServerError)
 	}
-}
-
-func checkSubscribeLimit(ctx context.Context, addr string) error {
-	if item, err := memcache.Get(ctx, addr); err == nil {
-		if n, err := strconv.Atoi(string(item.Value)); err == nil && n >= 2 {
-			return errors.New("Limit reached")
-		}
-	}
-	return nil
-}
-
-func updateSubscribeLimit(ctx context.Context, addr string) {
-	n := 0
-	if item, err := memcache.Get(ctx, addr); err == nil {
-		n, _ = strconv.Atoi(string(item.Value))
-	}
-	n++
-	memcache.Set(ctx, &memcache.Item{
-		Key:        addr,
-		Value:      []byte(strconv.Itoa(n)),
-		Expiration: 24 * time.Hour,
-	})
 }
