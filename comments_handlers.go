@@ -101,6 +101,11 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 	comment.ThreadID = mux.Vars(r)["id"]
 	comment.CreatedAt = time.Now().UTC()
 
+	if len(comment.Text) > 2048 {
+		util.ResponseError(w, "Comment is too long", http.StatusBadRequest)
+		return
+	}
+
 	if err := db.PutComment(ctx, &comment); err != nil {
 		log.Errorf(ctx, "%v", err)
 		util.ResponseError(w, "Could not create comment", http.StatusInternalServerError)
