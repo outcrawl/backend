@@ -30,3 +30,7 @@ func getCachedItem(ctx context.Context, key string, v interface{}) error {
 		return json.Unmarshal(item.Value, &v)
 	}
 }
+
+func clearCachedItem(ctx context.Context, key string) error {
+	return memcache.Delete(ctx, key)
+}

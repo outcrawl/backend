@@ -81,6 +81,9 @@ func closeThreadHandler(ctx context.Context, user *db.User, w http.ResponseWrite
 		util.ResponseError(w, "Could not close thread", http.StatusInternalServerError)
 		return
 	}
+
+	clearCachedItem(ctx, "thread:"+thread.ID)
+
 	util.ResponseJSON(w, thread)
 }
 
@@ -104,6 +107,8 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 		return
 	}
 
+	clearCachedItem(ctx, "thread:"+comment.ThreadID)
+
 	util.ResponseJSON(w, comment)
 }
 
@@ -126,6 +131,8 @@ func deleteCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 		util.ResponseError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	clearCachedItem(ctx, "thread:"+threadID)
 
 	util.ResponseJSON(w, comment)
 }
