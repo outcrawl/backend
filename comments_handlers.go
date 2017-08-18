@@ -36,12 +36,19 @@ func readThreadHandler(w http.ResponseWriter, r *http.Request) {
 		ID:       mux.Vars(r)["id"],
 		Comments: []db.Comment{},
 	}
+
+	if err := getCachedItem(ctx, "thread:"+thread.ID, &thread); err == nil {
+		util.ResponseJSON(w, thread)
+		return
+	}
+
 	if err := db.GetThreadWithComments(ctx, thread); err != nil {
 		log.Errorf(ctx, "%v", err)
 		util.ResponseError(w, "Could not read thread", http.StatusInternalServerError)
 		return
 	}
 
+	cacheItem(ctx, "thread:"+thread.ID, thread)
 	util.ResponseJSON(w, thread)
 }
 

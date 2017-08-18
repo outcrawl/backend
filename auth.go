@@ -1,14 +1,20 @@
 package backend
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
+	"regexp"
+	"strconv"
+	"time"
 
 	"github.com/outcrawl/backend/db"
 	"github.com/outcrawl/backend/util"
 
 	"google.golang.org/appengine"
-	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/memcache"
 	"google.golang.org/appengine/urlfetch"
 
 	jwt "github.com/dgrijalva/jwt-go"
@@ -37,8 +43,9 @@ func Authenticate(handler AuthenticatedHandlerFunc) http.HandlerFunc {
 			}
 			handler(ctx, user, w, r)
 		} else {
-			if keySet == nil {
-				getKeySet(ctx)
+			if err := getKeySet(ctx); err != nil {
+				util.ResponseError(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 
 			claims, err := validateToken(token)
@@ -82,14 +89,50 @@ func validateToken(tokenString string) (jwt.MapClaims, error) {
 	return token.Claims.(jwt.MapClaims), nil
 }
 
-func getKeySet(ctx context.Context) {
+func getKeySet(ctx context.Context) error {
+	if keySet == nil {
+		keySet = make(map[string]string)
+	} else {
+		return nil
+	}
+
+	// check cache
+	if item, err := memcache.Get(ctx, "server:certs"); err == nil {
+		return json.Unmarshal(item.Value, &keySet)
+	}
+
+	// fetch keys
 	client := urlfetch.Client(ctx)
 	resp, err := client.Get(googleCertsURL)
 	if err != nil {
-		log.Errorf(ctx, "%v", err)
-		return
+		return err
 	}
-	if err := util.ReadJSON(resp.Body, &keySet); err != nil {
-		log.Errorf(ctx, "%v", err)
+
+	// read keys
+	defer resp.Body.Close()
+	data, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return err
 	}
+	err = json.Unmarshal(data, &keySet)
+	if err != nil {
+		return err
+	}
+
+	// cache keys
+	cacheControl := resp.Header.Get("Cache-Control")
+	re := regexp.MustCompile(`max-age=[0-9]+`)
+	maxAgeString := re.FindString(cacheControl)[8:]
+	maxAge, err := strconv.ParseInt(maxAgeString, 10, 64)
+	if err != nil {
+		return errors.New("Could not parse Cache-Control header")
+	}
+
+	item := &memcache.Item{
+		Key:        "server:certs",
+		Value:      data,
+		Expiration: time.Duration(maxAge) * time.Second,
+	}
+	memcache.Add(ctx, item)
+	return nil
 }

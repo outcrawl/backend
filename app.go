@@ -33,9 +33,10 @@ func init() {
 
 	r := mux.NewRouter()
 
-	// users
-	r.HandleFunc("/api/users/signin", Authenticate(signInHandler)).
+	r.HandleFunc("/api/signin", Authenticate(signInHandler)).
 		Methods("POST")
+
+	// users
 	r.HandleFunc("/api/users/{id}/ban", Authenticate(banUserHandler)).
 		Methods("POST")
 	r.HandleFunc("/api/users/{id}/unban", Authenticate(unbanUserHandler)).
