@@ -48,13 +48,17 @@ func Authenticate(handler AuthenticatedHandlerFunc) http.HandlerFunc {
 				return
 			}
 
-			claims, err := validateToken(token)
+			claims, err := validateToken(ctx, token)
 			if err != nil {
 				util.ResponseError(w, err.Error(), http.StatusUnauthorized)
 				return
 			}
 			if claims["aud"] != googleClientID {
 				util.ResponseError(w, "Invalid client ID", http.StatusUnauthorized)
+				return
+			}
+			if claims["iss"] != "https://accounts.google.com" && claims["iss"] != "accounts.google.com" {
+				util.ResponseError(w, "Token not issued by Google", http.StatusUnauthorized)
 				return
 			}
 
@@ -70,7 +74,7 @@ func Authenticate(handler AuthenticatedHandlerFunc) http.HandlerFunc {
 	}
 }
 
-func validateToken(tokenString string) (jwt.MapClaims, error) {
+func validateToken(ctx context.Context, tokenString string) (jwt.MapClaims, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if token.Method.Alg() != jwt.SigningMethodRS256.Alg() {
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
@@ -78,6 +82,7 @@ func validateToken(tokenString string) (jwt.MapClaims, error) {
 		kid := token.Header["kid"].(string)
 		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(keySet[kid]))
 		if err != nil {
+			memcache.Delete(ctx, "server:certs")
 			return nil, err
 		}
 		return key, nil
@@ -131,8 +136,12 @@ func getKeySet(ctx context.Context) error {
 	item := &memcache.Item{
 		Key:        "server:certs",
 		Value:      data,
-		Expiration: time.Duration(maxAge) * time.Second,
+		Expiration: time.Duration(maxAge-60) * time.Second,
 	}
 	memcache.Add(ctx, item)
 	return nil
+}
+
+func parsePublicKey() {
+
 }
