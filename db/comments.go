@@ -60,7 +60,7 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 	}
 
 	if keys, err := datastore.NewQuery("Comment").
-		Filter("ReplyTo =", comment.ID).
+		Filter("ReplyTo =", id).
 		KeysOnly().
 		GetAll(ctx, nil); err != nil {
 		return err

@@ -14,6 +14,7 @@ import (
 	"github.com/outcrawl/backend/util"
 
 	"google.golang.org/appengine"
+	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/memcache"
 	"google.golang.org/appengine/urlfetch"
 
@@ -23,7 +24,7 @@ import (
 
 type AuthenticatedHandlerFunc func(ctx context.Context, user *db.User, w http.ResponseWriter, r *http.Request)
 
-var keySet map[string]string
+var keySet map[string][]byte
 
 func Authenticate(handler AuthenticatedHandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -43,11 +44,6 @@ func Authenticate(handler AuthenticatedHandlerFunc) http.HandlerFunc {
 			}
 			handler(ctx, user, w, r)
 		} else {
-			if err := getKeySet(ctx); err != nil {
-				util.ResponseError(w, err.Error(), http.StatusInternalServerError)
-				return
-			}
-
 			claims, err := validateToken(ctx, token)
 			if err != nil {
 				util.ResponseError(w, err.Error(), http.StatusUnauthorized)
@@ -80,12 +76,28 @@ func validateToken(ctx context.Context, tokenString string) (jwt.MapClaims, erro
 			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
 		}
 		kid := token.Header["kid"].(string)
-		key, err := jwt.ParseRSAPublicKeyFromPEM([]byte(keySet[kid]))
-		if err != nil {
-			memcache.Delete(ctx, "server:certs")
-			return nil, err
+		var pem []byte
+
+		// check local variable
+		pem = keySet[kid]
+		// check cache
+		if len(pem) == 0 {
+			pem = getCachedKey(ctx, kid)
 		}
-		return key, nil
+		// fetch new keys
+		if len(pem) == 0 {
+			pem = fetchNewKey(ctx, kid)
+		}
+
+		if len(pem) > 0 {
+			key, err := jwt.ParseRSAPublicKeyFromPEM(pem)
+			if err != nil {
+				log.Infof(ctx, "%v", err)
+				return nil, err
+			}
+			return key, nil
+		}
+		return nil, errors.New("PEM Key not found")
 	})
 	if err != nil {
 		return nil, err
@@ -94,54 +106,72 @@ func validateToken(ctx context.Context, tokenString string) (jwt.MapClaims, erro
 	return token.Claims.(jwt.MapClaims), nil
 }
 
-func getKeySet(ctx context.Context) error {
-	if keySet == nil {
-		keySet = make(map[string]string)
-	} else {
-		return nil
+func getCachedKey(ctx context.Context, kid string) []byte {
+	if item, err := memcache.Get(ctx, "key:"+kid); err == nil {
+		if keySet == nil {
+			keySet = make(map[string][]byte)
+		}
+		keySet[kid] = item.Value
+		return item.Value
 	}
+	return nil
+}
 
-	// check cache
-	if item, err := memcache.Get(ctx, "server:certs"); err == nil {
-		return json.Unmarshal(item.Value, &keySet)
-	}
-
+func fetchNewKey(ctx context.Context, kid string) []byte {
 	// fetch keys
 	client := urlfetch.Client(ctx)
 	resp, err := client.Get(googleCertsURL)
 	if err != nil {
-		return err
+		log.Errorf(ctx, "%v", err)
+		return nil
 	}
 
 	// read keys
 	defer resp.Body.Close()
 	data, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		log.Errorf(ctx, "%v", err)
+		return nil
 	}
-	err = json.Unmarshal(data, &keySet)
+	var keysJson map[string]string
+	err = json.Unmarshal(data, &keysJson)
 	if err != nil {
-		return err
+		log.Errorf(ctx, "%v", err)
+		return nil
 	}
 
-	// cache keys
+	// read max age
 	cacheControl := resp.Header.Get("Cache-Control")
 	re := regexp.MustCompile(`max-age=[0-9]+`)
 	maxAgeString := re.FindString(cacheControl)[8:]
 	maxAge, err := strconv.ParseInt(maxAgeString, 10, 64)
-	if err != nil {
-		return errors.New("Could not parse Cache-Control header")
+	if err == nil {
+		// cache keys
+		for k, v := range keysJson {
+			item := &memcache.Item{
+				Key:        "key:" + k,
+				Value:      []byte(v),
+				Expiration: time.Duration(maxAge-60) * time.Second,
+			}
+			memcache.Add(ctx, item)
+		}
 	}
 
-	item := &memcache.Item{
-		Key:        "server:certs",
-		Value:      data,
-		Expiration: time.Duration(maxAge-60) * time.Second,
+	if keySet == nil {
+		keySet = make(map[string][]byte)
 	}
-	memcache.Add(ctx, item)
-	return nil
+	for k, v := range keysJson {
+		keySet[k] = []byte(v)
+	}
+
+	return keySet[kid]
 }
 
-func parsePublicKey() {
-
+func cacheKey(ctx context.Context, kid string, exp time.Duration, key []byte) {
+	item := &memcache.Item{
+		Key:        "key:" + kid,
+		Value:      key,
+		Expiration: exp,
+	}
+	memcache.Add(ctx, item)
 }
