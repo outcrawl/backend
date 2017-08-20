@@ -58,5 +58,17 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 	if err := datastore.Delete(ctx, key); err != nil {
 		return err
 	}
+
+	if keys, err := datastore.NewQuery("Comment").
+		Filter("ReplyTo =", comment.ID).
+		KeysOnly().
+		GetAll(ctx, nil); err != nil {
+		return err
+	} else {
+		if err := datastore.DeleteMulti(ctx, keys); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }

@@ -96,15 +96,16 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 	var comment db.Comment
 	if err := util.ReadJSON(r.Body, &comment); err != nil || len(comment.Text) == 0 {
 		util.ResponseError(w, "Invalid body", http.StatusBadRequest)
+		return
 	}
-	comment.UserID = user.ID
-	comment.ThreadID = mux.Vars(r)["id"]
-	comment.CreatedAt = time.Now().UTC()
-
 	if len(comment.Text) > 2048 {
 		util.ResponseError(w, "Comment is too long", http.StatusBadRequest)
 		return
 	}
+
+	comment.UserID = user.ID
+	comment.ThreadID = mux.Vars(r)["id"]
+	comment.CreatedAt = time.Now().UTC()
 
 	if err := db.PutComment(ctx, &comment); err != nil {
 		log.Errorf(ctx, "%v", err)
@@ -132,7 +133,6 @@ func deleteCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 		ThreadID: threadID,
 	}
 	if err := db.DeleteComment(ctx, comment); err != nil {
-		log.Errorf(ctx, "%v", err)
 		util.ResponseError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
