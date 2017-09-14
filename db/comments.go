@@ -59,10 +59,11 @@ func DeleteComment(ctx context.Context, comment *Comment) error {
 		return err
 	}
 
+	var replies []*Comment
 	if keys, err := datastore.NewQuery("Comment").
-		Filter("ReplyTo =", id).
+		Filter("ReplyTo =", comment.ID).
 		KeysOnly().
-		GetAll(ctx, nil); err != nil {
+		GetAll(ctx, &replies); err != nil {
 		return err
 	} else {
 		if err := datastore.DeleteMulti(ctx, keys); err != nil {
