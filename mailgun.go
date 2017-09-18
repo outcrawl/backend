@@ -31,7 +31,7 @@ func subscribe(ctx context.Context, email string) error {
 	if err != nil {
 		return err
 	}
-	return errors.New("member not added")
+	return errors.New("Member not added")
 }
 
 func send(ctx context.Context, subject string, message string) error {
@@ -57,5 +57,5 @@ func sendTo(ctx context.Context, subject string, message string, to string) erro
 		return nil
 	}
 
-	return errors.New("mail not sent")
+	return errors.New("Mail not sent")
 }

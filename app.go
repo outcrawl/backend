@@ -14,6 +14,7 @@ var (
 	adminEmail           string
 	googleClientID       string
 	googleCertsURL       string
+	reCaptchaKey         string
 	mgAPIKey             string
 	mgPublicAPIKey       string
 	mgDomain             string
@@ -26,6 +27,7 @@ func init() {
 	adminEmail = os.Getenv("ADMIN_EMAIL")
 	googleClientID = os.Getenv("GOOGLE_CLIENT_ID")
 	googleCertsURL = os.Getenv("GOOGLE_CERTS_URL")
+	reCaptchaKey = os.Getenv("RE_CAPTCHA_KEY")
 	mgAPIKey = os.Getenv("MG_API_KEY")
 	mgPublicAPIKey = os.Getenv("MG_PUBLIC_API_KEY")
 	mgDomain = os.Getenv("MG_DOMAIN")
@@ -43,7 +45,7 @@ func init() {
 		Methods("POST")
 
 	// mail
-	r.HandleFunc("/api/mail/subscribe", Authenticate(subscribeHandler)).
+	r.HandleFunc("/api/mail/subscribe/{email}/{recaptcha}", subscribeHandler).
 		Methods("POST")
 	r.HandleFunc("/api/mail/send", Authenticate(sendMailHandler)).
 		Methods("POST")
