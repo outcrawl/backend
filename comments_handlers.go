@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"html/template"
 	"net/http"
 	"time"
 
@@ -106,6 +107,7 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 	comment.UserID = user.ID
 	comment.ThreadID = mux.Vars(r)["id"]
 	comment.CreatedAt = time.Now().UTC()
+	comment.Text = template.HTMLEscapeString(comment.Text)
 
 	if err := db.PutComment(ctx, &comment); err != nil {
 		log.Errorf(ctx, "%v", err)
