@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -18,11 +17,6 @@ import (
 	"google.golang.org/appengine/log"
 	"google.golang.org/appengine/urlfetch"
 )
-
-type sendRequest struct {
-	Subject string `json:"subject"`
-	Message string `json:"message"`
-}
 
 func subscribeHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := appengine.NewContext(r)
@@ -65,23 +59,23 @@ func sendMailHandler(ctx context.Context, user *db.User, w http.ResponseWriter, 
 		return
 	}
 
+	vars := mux.Vars(r)
+	subject := vars["subject"]
+
+	// Read body
 	defer r.Body.Close()
 	data, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		util.ResponseError(w, err.Error(), http.StatusBadRequest)
+		util.ResponseError(w, "Invalid body", http.StatusBadRequest)
 		return
 	}
+	message := string(data)
 
-	var sr sendRequest
-	err = json.Unmarshal(data, &sr)
-	if err != nil {
-		util.ResponseError(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err := send(ctx, sr.Subject, sr.Message); err == nil {
-		util.ResponseJSON(w, "")
-	} else {
+	// Send email
+	if err := send(ctx, subject, message); err != nil {
 		util.ResponseError(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
+
+	util.ResponseSuccess(w)
 }

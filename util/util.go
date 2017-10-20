@@ -19,6 +19,10 @@ func ResponseError(w http.ResponseWriter, message string, code int) {
 	json.NewEncoder(w).Encode(map[string]string{"error": message})
 }
 
+func ResponseSuccess(w http.ResponseWriter) {
+	w.WriteHeader(http.StatusOK)
+}
+
 func ReadJSON(rc io.ReadCloser, v interface{}) error {
 	defer rc.Close()
 	data, err := ioutil.ReadAll(rc)

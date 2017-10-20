@@ -43,7 +43,7 @@ func sendTo(ctx context.Context, subject string, message string, to string) erro
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", mgDomain)
 
 	data := url.Values{
-		"from":    {"Outcrawl <news@outcrawl.com>"},
+		"from":    {"Outcrawl <contact@outcrawl.com>"},
 		"to":      {to},
 		"subject": {subject},
 		"html":    {message},

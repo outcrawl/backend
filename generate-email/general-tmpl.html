@@ -1,4 +1,5 @@
 <!-- Credit: https://github.com/leemunroe/responsive-html-email-template -->
+
 <!doctype html>
 <html>
 
@@ -8,6 +9,10 @@
   <meta http-equiv="Content-Type"
         content="text/html; charset=UTF-8" />
   <style>
+    /* -------------------------------------
+          GLOBAL RESETS
+      ------------------------------------- */
+
     img {
       border: none;
       -ms-interpolation-mode: bicubic;
@@ -39,18 +44,27 @@
       vertical-align: top;
     }
 
+    /* -------------------------------------
+        BODY & CONTAINER
+    ------------------------------------- */
+
     .body {
       background-color: #f6f6f6;
       width: 100%;
     }
 
+    /* Set a max-width, and make it display as block so it will automatically stretch to that width, but will also shrink down on a phone or something */
+
     .container {
       display: block;
       Margin: 0 auto !important;
+      /* makes it centered */
       max-width: 580px;
       padding: 10px;
       width: 580px;
     }
+
+    /* This should also be a block element, so that it will fill 100% of the .container */
 
     .content {
       box-sizing: border-box;
@@ -59,6 +73,10 @@
       max-width: 580px;
       padding: 10px;
     }
+
+    /* -------------------------------------
+        HEADER, FOOTER, MAIN
+    ------------------------------------- */
 
     .main {
       background: #ffffff;
@@ -93,14 +111,14 @@
     }
 
     /* -------------------------------------
-          TYPOGRAPHY
-      ------------------------------------- */
+        TYPOGRAPHY
+    ------------------------------------- */
 
     h1,
     h2,
     h3,
     h4 {
-      color: #212121;
+      color: #000000;
       font-family: sans-serif;
       font-weight: 400;
       line-height: 1.4;
@@ -133,13 +151,18 @@
     }
 
     a {
-      color: #039be5;
-      text-decoration: underline;
+      color: #3498db;
+      text-decoration: none;
+    }
+
+    a h2 {
+      color: #3498db;
+      margin-bottom: 10px;
     }
 
     /* -------------------------------------
-          BUTTONS
-      ------------------------------------- */
+        BUTTONS
+    ------------------------------------- */
 
     .btn {
       box-sizing: border-box;
@@ -187,8 +210,8 @@
     }
 
     /* -------------------------------------
-          OTHER STYLES THAT MIGHT BE USEFUL
-      ------------------------------------- */
+        OTHER STYLES THAT MIGHT BE USEFUL
+    ------------------------------------- */
 
     .last {
       margin-bottom: 0;
@@ -222,23 +245,6 @@
       margin-bottom: 0;
     }
 
-    .preheader {
-      color: transparent;
-      display: none;
-      height: 0;
-      max-height: 0;
-      max-width: 0;
-      opacity: 0;
-      overflow: hidden;
-      mso-hide: all;
-      visibility: hidden;
-      width: 0;
-    }
-
-    .powered-by a {
-      text-decoration: none;
-    }
-
     hr {
       border: 0;
       border-bottom: 1px solid #f6f6f6;
@@ -246,8 +252,8 @@
     }
 
     /* -------------------------------------
-          RESPONSIVE AND MOBILE FRIENDLY STYLES
-      ------------------------------------- */
+        RESPONSIVE AND MOBILE FRIENDLY STYLES
+    ------------------------------------- */
 
     @media only screen and (max-width: 620px) {
       table[class=body] h1 {
@@ -292,8 +298,8 @@
     }
 
     /* -------------------------------------
-          PRESERVE THESE STYLES IN THE HEAD
-      ------------------------------------- */
+        PRESERVE THESE STYLES IN THE HEAD
+    ------------------------------------- */
 
     @media all {
       .ExternalClass {
@@ -307,14 +313,6 @@
       .ExternalClass div {
         line-height: 100%;
       }
-      .apple-link a {
-        color: inherit !important;
-        font-family: inherit !important;
-        font-size: inherit !important;
-        font-weight: inherit !important;
-        line-height: inherit !important;
-        text-decoration: none !important;
-      }
       .btn-primary table td:hover {
         background-color: #34495e !important;
       }
@@ -324,20 +322,14 @@
       }
     }
 
-    .logo {
-      margin-bottom: 30px;
-    }
+    /* Components */
 
     .article {
       margin-bottom: 30px;
     }
 
-    .article h2 {
-      margin: 0 0 10px 0;
-    }
-
-    .article a {
-      text-decoration: none;
+    .logo {
+      margin-bottom: 30px;
     }
   </style>
 </head>
@@ -361,29 +353,45 @@
                        cellspacing="0">
                   <tr>
                     <td>
-                      <center>
-                        <img class="logo" src="https://outcrawl.com/logo-text.svg" height="80" />
-                      </center>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
+
+                      <!-- Logo -->
+                      <table border="0"
+                              cellpadding="0"
+                              cellspacing="0">
+                        <tbody>
+                          <tr>
+                            <td align="center">
+                              <img class="logo" src="https://outcrawl.com/logo-text.png" height="80" />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <!-- Main message -->
                       {{.Text}}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <hr />
-                    {{range .Articles}}
-                      <div class="article">
-                        <h2>
-                          <a target="_blank" href="{{.URL}}">
-                            <h2>{{.Title}}</h2>
-                          </a>
-                        </h2>
-                        {{.Description}}
-                      </div>
-                    {{end}}
+
+                      <!-- List of articles -->
+                      {{if .Articles}}
+                        <hr>
+                      {{end}}
+                      {{range .Articles}}
+                        <table border="0"
+                                cellpadding="0"
+                                cellspacing="0"
+                                class="article">
+                          <tbody>
+                            <tr>
+                              <td>
+                                <a target="_blank" href="{{.URL}}">
+                                  <h2>{{.Title}}</h2>
+                                </a>
+                                {{.Description}}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      {{end}}
+
                     </td>
                   </tr>
                 </table>
@@ -402,8 +410,9 @@
                 </td>
               </tr>
               <tr>
-                <td class="content-block"> Don't like these emails?
-                  <a href="%unsubscribe_url%">Unsubscribe</a>. </td>
+                <td class="content-block">
+                  Don't like these emails? <a target="_blank" href="%unsubscribe_url%">Unsubscribe</a>.
+                </td>
               </tr>
             </table>
           </div>

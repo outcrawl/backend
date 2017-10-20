@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/gorilla/mux"
+	"github.com/outcrawl/backend/util"
 	"github.com/rs/cors"
 )
 
@@ -35,6 +36,10 @@ func init() {
 
 	r := mux.NewRouter()
 
+	r.HandleFunc("/api/check", func(w http.ResponseWriter, r *http.Request) {
+		util.ResponseJSON(w, "OK")
+	})
+
 	r.HandleFunc("/api/signin", Authenticate(signInHandler)).
 		Methods("POST")
 
@@ -47,7 +52,7 @@ func init() {
 	// mail
 	r.HandleFunc("/api/mail/subscribe/{email}/{recaptcha}", subscribeHandler).
 		Methods("POST")
-	r.HandleFunc("/api/mail/send", Authenticate(sendMailHandler)).
+	r.HandleFunc("/api/mail/send/{subject}", Authenticate(sendMailHandler)).
 		Methods("POST")
 
 	// comments

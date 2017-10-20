@@ -9,9 +9,6 @@ import (
 	"os"
 
 	"github.com/asciimoo/colly"
-	"github.com/tdewolff/minify"
-	"github.com/tdewolff/minify/css"
-	"github.com/tdewolff/minify/html"
 
 	"github.com/BurntSushi/toml"
 	"github.com/golang-commonmark/markdown"
@@ -34,6 +31,7 @@ type Article struct {
 	Title       string
 	Description template.HTML
 	URL         template.URL
+	CoverURL    template.URL
 }
 
 func main() {
@@ -82,32 +80,23 @@ func generate() error {
 	if err != nil {
 		return err
 	}
-	// Create output file
-	f, err := os.Create(outputFile)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
 	// Generate email
 	email, err := parseData()
 	if err != nil {
 		return err
 	}
 
+	// Execute template
 	buf := bytes.NewBufferString("")
 	err = tmpl.Execute(buf, email)
 	if err != nil {
 		return err
 	}
 
-	min := minify.New()
-	min.AddFunc("text/css", css.Minify)
-	min.AddFunc("text/html", html.Minify)
-	if err := min.Minify("text/html", f, buf); err != nil {
-		return err
-	}
+	// Write to file
+	err = ioutil.WriteFile(outputFile, buf.Bytes(), os.ModePerm)
 
-	return nil
+	return err
 }
 
 func parseData() (*Email, error) {
@@ -139,6 +128,8 @@ func scrapeReferences(email *Email) error {
 				a.Title = e.Attr("content")
 			case "og:description":
 				a.Description = template.HTML(e.Attr("content"))
+			case "og:image":
+				a.CoverURL = template.URL(e.Attr("content"))
 			}
 		})
 		if err := c.Visit(ref); err != nil {

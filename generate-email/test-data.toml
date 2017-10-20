@@ -1,11 +1,5 @@
 Text = '''
-Esse voluptate fugiat elit aute commodo et nulla proident dolor irure.
-
-Est Lorem Lorem irure pariatur eu laboris cupidatat in excepteur ut culpa.
+...
 '''
 
-References = [
-  "https://outcrawl.com/image-recognition-api-go-tensorflow/",
-  "https://outcrawl.com/clean-development-environment-docker/",
-  "https://outcrawl.com/graphql-server-go-google-app-engine/"
-]
+References = []
