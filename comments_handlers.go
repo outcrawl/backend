@@ -12,6 +12,8 @@ import (
 	"golang.org/x/net/context"
 	"google.golang.org/appengine"
 	"google.golang.org/appengine/log"
+
+	"strings"
 )
 
 func createThreadHandler(ctx context.Context, user *db.User, w http.ResponseWriter, r *http.Request) {
@@ -94,6 +96,7 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 		return
 	}
 
+	// Read comment
 	var comment db.Comment
 	if err := util.ReadJSON(r.Body, &comment); err != nil || len(comment.Text) == 0 {
 		util.ResponseError(w, "Invalid body", http.StatusBadRequest)
@@ -104,15 +107,34 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 		return
 	}
 
+	// Update fields
 	comment.UserID = user.ID
 	comment.ThreadID = mux.Vars(r)["id"]
 	comment.CreatedAt = time.Now().UTC()
 	comment.Text = template.HTMLEscapeString(comment.Text)
 
+	// Insert comment into database
 	if err := db.PutComment(ctx, &comment); err != nil {
 		log.Errorf(ctx, "%v", err)
 		util.ResponseError(w, "Could not create comment", http.StatusInternalServerError)
 		return
+	}
+
+	// Send reply email
+	if len(comment.ReplyTo) != 0 {
+		parentComment := &db.Comment{ID: comment.ReplyTo}
+		if err := db.GetComment(ctx, parentComment); err == nil {
+			recipient := &db.User{ID: parentComment.UserID}
+			if err = db.GetUser(ctx, recipient); err == nil {
+				if rateLimitEmailTo(ctx, recipient.Email) {
+					email := strings.Replace(commentReplyEmail,
+						"{{url}}",
+						"https://outcrawl.com/"+comment.ThreadID+"/",
+						1)
+					sendTo(ctx, "You've got a reply", email, recipient.Email)
+				}
+			}
+		}
 	}
 
 	clearCachedItem(ctx, "thread:"+comment.ThreadID)

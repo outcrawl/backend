@@ -24,8 +24,8 @@ func PutComment(ctx context.Context, comment *Comment) error {
 			replyID, err := strconv.ParseInt(comment.ReplyTo, 10, 64)
 			if err != nil {
 				parentKey := datastore.NewKey(ctx, "Comment", "", replyID, nil)
-				var parent Comment
-				if err := datastore.Get(ctx, parentKey, &parent); err != nil {
+				var parentComment Comment
+				if err := datastore.Get(ctx, parentKey, &parentComment); err != nil {
 					return err
 				}
 			}

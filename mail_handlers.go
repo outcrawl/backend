@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	"google.golang.org/appengine"
 
@@ -15,6 +16,7 @@ import (
 
 	"golang.org/x/net/context"
 	"google.golang.org/appengine/log"
+	"google.golang.org/appengine/memcache"
 	"google.golang.org/appengine/urlfetch"
 )
 
@@ -78,4 +80,18 @@ func sendMailHandler(ctx context.Context, user *db.User, w http.ResponseWriter, 
 	}
 
 	util.ResponseSuccess(w)
+}
+
+func rateLimitEmailTo(ctx context.Context, email string) bool {
+	if _, err := memcache.Get(ctx, "rateLimit:"+email); err == nil {
+		return false
+	}
+	// Limit to 1 email per day
+	item := &memcache.Item{
+		Key:        "rateLimit:" + email,
+		Value:      []byte(""),
+		Expiration: 24 * time.Hour,
+	}
+	memcache.Add(ctx, item)
+	return true
 }
