@@ -131,10 +131,19 @@ func createCommentHandler(ctx context.Context, user *db.User, w http.ResponseWri
 						"{{url}}",
 						"https://outcrawl.com/"+comment.ThreadID+"/",
 						1)
-					sendTo(ctx, "You've got a reply", email, recipient.Email)
+					sendEmailTo(ctx, "You've got a reply", email, recipient.Email)
 				}
 			}
 		}
+	}
+
+	// Notify admin
+	if rateLimitEmailTo(ctx, adminEmail) {
+		email := strings.Replace(notifyAdminOncommentEmail,
+			"{{url}}",
+			"https://outcrawl.com/"+comment.ThreadID+"/",
+			1)
+		sendEmailTo(ctx, "New comment", email, adminEmail)
 	}
 
 	clearCachedItem(ctx, "thread:"+comment.ThreadID)

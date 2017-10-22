@@ -34,11 +34,11 @@ func subscribe(ctx context.Context, email string) error {
 	return errors.New("Member not added")
 }
 
-func send(ctx context.Context, subject string, message string) error {
-	return sendTo(ctx, subject, message, mgMailingListAddress)
+func sendEmail(ctx context.Context, subject string, message string) error {
+	return sendEmailTo(ctx, subject, message, mgMailingListAddress)
 }
 
-func sendTo(ctx context.Context, subject string, message string, to string) error {
+func sendEmailTo(ctx context.Context, subject string, message string, to string) error {
 	client := urlfetch.Client(ctx)
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", mgDomain)
 

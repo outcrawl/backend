@@ -74,7 +74,7 @@ func sendMailHandler(ctx context.Context, user *db.User, w http.ResponseWriter, 
 	message := string(data)
 
 	// Send email
-	if err := send(ctx, subject, message); err != nil {
+	if err := sendEmail(ctx, subject, message); err != nil {
 		util.ResponseError(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
