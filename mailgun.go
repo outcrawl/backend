@@ -8,12 +8,14 @@ import (
 	"net/url"
 	"time"
 
-	"golang.org/x/net/context"
+	"google.golang.org/appengine"
+
+	"github.com/gin-gonic/gin"
 	"google.golang.org/appengine/urlfetch"
 )
 
-func subscribe(ctx context.Context, email string) error {
-	client := urlfetch.Client(ctx)
+func subscribe(c *gin.Context, email string) error {
+	client := urlfetch.Client(appengine.NewContext(c.Request))
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/lists/%s/members", mgMailingListAddress)
 	data := url.Values{
 		"address": {email},
@@ -34,12 +36,12 @@ func subscribe(ctx context.Context, email string) error {
 	return errors.New("Member not added")
 }
 
-func sendEmail(ctx context.Context, subject string, message string) error {
-	return sendEmailTo(ctx, subject, message, mgMailingListAddress)
+func sendEmail(c *gin.Context, subject string, message string) error {
+	return sendEmailTo(c, subject, message, mgMailingListAddress)
 }
 
-func sendEmailTo(ctx context.Context, subject string, message string, to string) error {
-	client := urlfetch.Client(ctx)
+func sendEmailTo(c *gin.Context, subject string, message string, to string) error {
+	client := urlfetch.Client(c)
 	endpoint := fmt.Sprintf("https://api.mailgun.net/v3/%s/messages", mgDomain)
 
 	data := url.Values{
