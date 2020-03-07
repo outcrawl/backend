@@ -21,6 +21,7 @@ var (
 	mgAPIKey             = os.Getenv("MG_API_KEY")
 	mgMailingListAddress = os.Getenv("MG_MAILING_LIST_ADDRESS")
 	mgDomain             = os.Getenv("MG_DOMAIN")
+	reCaptchaKey         = os.Getenv("RE_CAPTCHA_KEY")
 )
 
 func HandleSubscribe(req SubscribeRequest) error {
@@ -35,8 +36,6 @@ func HandleSubscribe(req SubscribeRequest) error {
 }
 
 func checkCaptcha(response string) error {
-	reCaptchaKey := os.Getenv("RE_CAPTCHA_KEY")
-
 	// Call recaptcha service
 	endpoint := fmt.Sprintf("https://www.google.com/recaptcha/api/siteverify?secret=%s&response=%s", reCaptchaKey, response)
 	resp, err := http.Post(endpoint, "text/plain", nil)
