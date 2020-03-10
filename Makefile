@@ -1,6 +1,6 @@
 .PHONY: build
 build: ## Build Lambda binaries
-	GOOS=linux GOARCH=amd64 go build -o build/subscribe ./cmd/subscribe
+	GO111MODULE=on GOOS=linux GOARCH=amd64 go build -mod vendor -o build/subscribe ./cmd/subscribe
 
 .PHONY: help
 help: ## Display this help screen
