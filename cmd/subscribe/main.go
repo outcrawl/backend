@@ -18,9 +18,18 @@ func subscribe(req events.APIGatewayProxyRequest) (events.APIGatewayProxyRespons
 	if err := newsletter.HandleSubscribe(sr); err != nil {
 		return errorResponse(http.StatusBadRequest, err.Error()), nil
 	}
+	return successResponse(), nil
+}
+
+func successResponse() events.APIGatewayProxyResponse {
 	return events.APIGatewayProxyResponse{
 		StatusCode: http.StatusOK,
-	}, nil
+		Headers: map[string]string{
+			"Content-Type":                     "application/json",
+			"Access-Control-Allow-Origin":      "*",
+			"Access-Control-Allow-Credentials": "true",
+		},
+	}
 }
 
 func errorResponse(statusCode int, message string) events.APIGatewayProxyResponse {
@@ -31,7 +40,9 @@ func errorResponse(statusCode int, message string) events.APIGatewayProxyRespons
 	return events.APIGatewayProxyResponse{
 		StatusCode: statusCode,
 		Headers: map[string]string{
-			"Content-Type": "application/json",
+			"Content-Type":                     "application/json",
+			"Access-Control-Allow-Origin":      "*",
+			"Access-Control-Allow-Credentials": "true",
 		},
 		Body: string(body),
 	}
